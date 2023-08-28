@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <title>Purchase Order Manage</title>
     <meta content="width=device-width initial-scale=1" name="viewport">
-    <link href="../assets/css/bootstrap.min.css" rel="stylesheet">
-    <link href="../assets/css/styles.css" rel="stylesheet">
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet">
+    <link href="assets/css/styles.css" rel="stylesheet">
     <link crossorigin="anonymous" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css"
           integrity="sha384-mzrmE5qonljUremFsqc01SB46JvROS7bZs3IO2EmfFsd15uHvIt+Y8vEf7N7fWAU" rel="stylesheet">
     <style>
@@ -20,7 +20,7 @@
 <header class="jumbotron bg-primary text-white p-3">
     <h1 class="position-absolute" id="nav"></h1>
     <ul class="list-group list-group-horizontal text-danger justify-content-end font-weight-bold">
-        <li class="list-group-item bg-white" id="lnkHome"><a href="../index.html">Home</a></li>
+        <li class="list-group-item bg-white" id="lnkHome"><a href="index.html">Home</a></li>
         <li class="list-group-item bg-white" id="lnkCustomer"><a href="customer.html">Customer</a></li>
         <li class="list-group-item bg-white" id="lnkItem"><a  href="item.html">Item</a></li>
         <li class="list-group-item bg-danger text-white" id="lnkOrders"><a class="text-white" href="purchase-order.html">Orders</a></li>
@@ -229,8 +229,8 @@
 </main>
 
 
-<script src="../assets/js/jquery-3.7.0.min.js"></script>
-<script src="../assets/js/bootstrap.min.js"></script>
+<script src="assets/js/jquery-3.7.0.min.js"></script>
+<script src="assets/js/bootstrap.min.js"></script>
 <script>
     let baseUrl="http://localhost:8081/posApp/";
     var genarateOrderId = 0;
@@ -315,13 +315,9 @@
             success: function (resp) {
                 $("#txtItemCode").val(resp.code);
                 $("#txtItemDescription").val(resp.description);
-                $("#txtQTYOnHand").val(resp.qty);
                 $("#txtItemPrice").val(resp.unitPrice);
-
-
+                $("#txtQTYOnHand").val(resp.qty);
                 // console.log(resp);
-
-
             },
             error: function (ob, statusText, error) {
             }
@@ -355,6 +351,116 @@
 
             $("#orderTable").append(row);
         }
+
+        //orderDetails.push(cartItemsRow);
+
+        calculateTotal();
+
+
+        $("#txtItemCode").val("");
+        $("#txtItemDescription").val("");
+        $("#txtItemPrice").val("");
+        $("#txtQTYOnHand").val("");
+        $("#txtQty").val("");
+
+        $("#orderCustomerID").focus();
+
+        $("#orderCustomerID").val("");
+        $("#orderCustomerName").val("");
+        $("#orderCustomerSalary").val("");
+        $("#orderCustomerAddress").val("");
+
+
+        $("#txtItemCode").focus();
+
+        updateQtyOnHandRow(itemCode, itemQty);
+
+    });
+
+
+    function calculateTotal() {
+        let total = 0;
+        $("#orderTable tr td:nth-child(5)").each(function () {
+            total += parseFloat($(this).text());
+        });
+        $("#total").text(total);
+        $("#subtotal").text(total);
+
+        $("#txtCash").on('keyup', function () {
+            var cash = $("#txtCash").val();
+            var total = $("#total").text();
+            var discount = $("#txtDiscount").val();
+            var balance = cash - (total - discount);
+            $("#txtBalance").val(balance);
+        });
+
+        $("#txtDiscount").on('keyup', function () {
+            var cash = $("#txtCash").val();
+            var total = $("#total").text();
+            var discount = $("#txtDiscount").val();
+            var balance = cash - (total - discount);
+            $("#txtBalance").val(balance);
+
+            $("#subtotal").text(total - discount);
+        });
+
+
+
+    }
+
+    function updateQtyOnHandRow(code, sellQty) {
+        $.ajax({
+            url: baseUrl + "Item?option=search&ItemCode=" + code,
+            method: "GET",
+            success: function (resp) {
+                $("#txtQTYOnHand").val(resp.qty - sellQty);
+            },
+            error: function (ob, statusText, error) {
+                console.error(error);
+            }
+        });
+    }
+    let orderDetails;
+    $(document).ready(function () {
+        $("#btnSubmitOrder").click(function () {
+            let orderId = $("#txtOrderID").val();
+            let orderDate = $("#txtDate").val();
+            let itemId = $("#orderItemCode").val();
+            let customerId = $("#orderCustomerID").val();
+            let qty = $("#txtQty").val();
+            let unitPrice = $("#orderItemPrice").val();
+            let cartItems = orderDetails;
+
+            let order = {
+                "order_ID": orderId,
+                "date": orderDate,
+                "Customer_ID": customerId, // Correct field name
+                "ItemCode": itemId, // Correct field name
+                "qty": qty,
+                "unitPrice": unitPrice,
+                "orderDetails": cartItems
+            }
+
+            $.ajax({
+                url: baseUrl+"placeOrder",
+                method: "POST",
+                contentType: "application/json",
+                headers: { "Access-Control-Allow-Origin": "*" },
+                data: JSON.stringify(order),
+                success: function (resp) {
+                    updateQtyOnHandRow();
+                    if (resp && resp.status === 200) {
+                        alert("Order has been saved successfully");
+                    } else {
+                        alert("Failed to save the order");
+                    }
+                },
+                error: function (ob, statusText, error) {
+                    alert(error);
+                }
+            });
+        });
+
     });
 
 

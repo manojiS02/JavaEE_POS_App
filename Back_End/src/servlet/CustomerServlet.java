@@ -19,7 +19,7 @@ public class CustomerServlet extends HttpServlet {
 
             /*<!--when the response received catch it and set it to the table-->*/
             forName("com.mysql.jdbc.Driver");
-            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
+            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/ajaxjson", "root", "1234");
             String option = req.getParameter("option");
             switch (option) {
                 case "GetAll":

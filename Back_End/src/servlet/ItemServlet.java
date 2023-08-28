@@ -17,7 +17,7 @@ public class ItemServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         try {
             Class.forName("com.mysql.jdbc.Driver");
-            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
+            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/ajaxjson", "root", "1234");
             String option = req.getParameter("option");
 
             switch (option){
