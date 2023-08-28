@@ -9,42 +9,67 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.*;
 
+import static java.lang.Class.forName;
+
 @WebServlet(urlPatterns = {"/Customer"})
 public class CustomerServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         try {
-            Class.forName("com.mysql.jdbc.Driver");
-            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/ajaxjson", "root", "1234");
-            PreparedStatement pstm = connection.prepareStatement("SELECT * FROM Customer");
-            ResultSet rst = pstm.executeQuery();
-            JsonArrayBuilder allCustomers = Json.createArrayBuilder();
 
-            while (rst.next()) {
-                JsonObjectBuilder customer = Json.createObjectBuilder();
-                customer.add("id", rst.getString("id"));
-                customer.add("name", rst.getString("name"));
-                customer.add("address", rst.getString("address"));
-                customer.add("salary", rst.getDouble("salary"));
-                allCustomers.add(customer.build());
+            /*<!--when the response received catch it and set it to the table-->*/
+            forName("com.mysql.jdbc.Driver");
+            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/posapi", "root", "1234");
+            String option = req.getParameter("option");
+            switch (option) {
+                case "GetAll":
+                    PreparedStatement pstm = connection.prepareStatement("SELECT * FROM Customer");
+                    ResultSet rst = pstm.executeQuery();
+                    JsonArrayBuilder allCustomers = Json.createArrayBuilder();
+                    resp.addHeader("Access-Control-Allow-Origin","*");
+
+                    while (rst.next()) {
+                        JsonObjectBuilder customer = Json.createObjectBuilder();
+                        customer.add("id", rst.getString("cusID"));
+                        customer.add("name", rst.getString("cusName"));
+                        customer.add("address", rst.getString("cusAddress"));
+                        customer.add("salary", rst.getDouble("cusSalary"));
+                        allCustomers.add(customer.build());
+                    }
+                    resp.setContentType("application/json");
+                    resp.getWriter().print(allCustomers.build());
+
+                    break;
+                case "search":
+                    PreparedStatement pstm3 = connection.prepareStatement("select * from customer where cusID=?");
+                    pstm3.setObject(1, req.getParameter("cusID"));
+                    ResultSet rst3 = pstm3.executeQuery();
+                    resp.addHeader("Access-Control-Allow-Origin", "*");
+
+                    JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
+                    if (rst3.next()) {
+                        String id = rst3.getString(1);
+                        String name = rst3.getString(2);
+                        String salary= rst3.getString(3);
+                        String address  = rst3.getString(4);
+
+                        objectBuilder.add("id", id);
+                        objectBuilder.add("name", name);
+                        objectBuilder.add("salary", salary);
+                        objectBuilder.add("address", address);
+
+                    }
+                    resp.setContentType("application/json");
+                    resp.getWriter().print(objectBuilder.build());
+                    break;
+
             }
-            resp.addHeader("Content-Type","application/json");
-            resp.addHeader("Access-Control-Allow-Origin","*");
 
 
-            JsonObjectBuilder job = Json.createObjectBuilder();
-            job.add("state","OK");
-            job.add("message","Successfully Loaded..!");
-            job.add("data",allCustomers.build());
-            resp.getWriter().print(job.build());
-
-        }catch (ClassNotFoundException | SQLException e){
-            JsonObjectBuilder rjo = Json.createObjectBuilder();
-            rjo.add("state","Error");
-            rjo.add("message",e.getLocalizedMessage());
-            rjo.add("data","");
-            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            resp.getWriter().print(rjo.build());
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 
